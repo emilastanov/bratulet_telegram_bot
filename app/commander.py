@@ -1,7 +1,5 @@
-from telegram.ext import Application, CommandHandler
-
 from api import send_message_to, db_connector, log
-from config import BOT_TOKEN
+from listener import listener
 import dialogs
 
 
@@ -15,7 +13,7 @@ async def add_subscriber(chat_id, name):
             "chat_id": chat_id,
             "is_active": True,
             "notifications": {
-                "last_50_hours_average": True,
+                "last_50_hours_average": False,
                 "less_then": 0,
                 "more_then": 0
             }
@@ -43,19 +41,48 @@ async def start(update, context):
     await add_subscriber(*get_chat_info(update))
 
 
-async def help(update, context):
+async def get_notifications(update, context):
     chat_id, name = get_chat_info(update)
 
-    await send_message_to(dialogs.help, chat_id)
+    subscribers_collection = db_connector('cb_collector')
+    subscriber = subscribers_collection.find_one({"chat_id": chat_id})
+
+    is_already_active = subscriber['notifications']['last_50_hours_average']
+
+    if is_already_active:
+        await send_message_to(dialogs.already_received_this, chat_id)
+    else:
+
+        context.job_queue.run_repeating(lambda _c: listener(chat_id, _c), 120, chat_id=chat_id, name=str(chat_id))
+
+        notifications = subscriber['notifications']
+        notifications['last_50_hours_average'] = True
+
+        subscribers_collection.find_one_and_update({"chat_id": chat_id},
+                                                   {"$set": {"notifications": notifications}})
+
+        await send_message_to(dialogs.get_last_50_average, chat_id)
 
 
-def commands():
-    print('Commandor has been started...')
-    application = Application.builder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help))
-    application.run_polling()
+async def turn_off_notifications(update, context):
+    chat_id, name = get_chat_info(update)
+
+    subscribers_collection = db_connector('cb_collector')
+    subscriber = subscribers_collection.find_one({"chat_id": chat_id})
+
+    notifications = subscriber['notifications']
+    notifications['last_50_hours_average'] = False
+
+    subscribers_collection.find_one_and_update({"chat_id": chat_id},
+                                               {"$set": {"notifications": notifications}})
+
+    job = context.job_queue.get_jobs_by_name(str(chat_id))
+    job[0].schedule_removal()
+
+    await send_message_to(dialogs.notification_terned_off, chat_id)
 
 
-if __name__ == '__main__':
-    commands()
+async def help_command(update, context):
+    chat_id, name = get_chat_info(update)
+
+    await send_message_to(dialogs.help_command, chat_id)

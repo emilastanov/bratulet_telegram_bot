@@ -9,5 +9,4 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-CMD [ "python3", "app/commander.py"]
-CMD [ "python3", "app/listener.py"]
+CMD [ "python3 app/main.py"]

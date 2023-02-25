@@ -21,17 +21,19 @@ def get_average_of_last_50_entities():
     return sum(sum_of_last_10_entities)/len(sum_of_last_10_entities)
 
 
-def get_last_currency_entity():
-    collection = db_connector('offers')
+def get_last_currency_entity(chat_id):
+    offers_collection = db_connector('offers')
+    subscribers_collection = db_connector('cb_collector')
 
-    entity = collection.find_one(sort=[("timestamp", -1)])
-    return entity['offers'][0], entity['_id'], entity.get('is_sent')
+    entity = offers_collection.find_one(sort=[("timestamp", -1)])
+    subscriber = subscribers_collection.find_one({"chat_id": chat_id})
+    return entity['offers'][0], entity['_id'], subscriber.get('last_sent_offer_id')
 
 
-def mark_entity_as_checked(mongo_id):
-    collection = db_connector('offers')
-    return collection.find_one_and_update({"_id": mongo_id},
-                                     {"$set": {"is_sent": True}})
+def mark_entity_as_checked(mongo_id, chat_id):
+    collection = db_connector('cb_collector')
+    return collection.find_one_and_update({"chat_id": chat_id},
+                                     {"$set": {"last_sent_offer_id": mongo_id}})
 
 
 def change_subscriber_state(chat_id, state):
@@ -49,31 +51,17 @@ def change_subscriber_state(chat_id, state):
                                               {"$set": {"is_active": state}})
 
 
-async def listener():
-    print('Listener has been started...')
+async def listener(chat_id, context):
 
-    while True:
-        last_entity, mongo_id, is_sent = get_last_currency_entity()
-        average_of_last_50_entities = get_average_of_last_50_entities()
+    last_entity, mongo_id, last_sent_offer_id = get_last_currency_entity(chat_id)
+    average_of_last_50_entities = get_average_of_last_50_entities()
 
-        if (last_entity['price'] <= average_of_last_50_entities) and (not is_sent):
-            for subscriber in get_list_of_subscriber():
-                try:
-                    if subscriber['notifications']['last_50_hours_average']:
-                        await send_message_to(
-                            dialogs.last_50_hours_average.format(
-                                currency=last_entity['currency'],
-                                seller_stock=last_entity['seller_stock'],
-                                price=last_entity['price']
-                            ), subscriber['chat_id'])
+    if (last_entity['price'] <= average_of_last_50_entities) and (mongo_id != last_sent_offer_id):
+        await send_message_to(
+            dialogs.last_50_hours_average.format(
+                currency=last_entity['currency'],
+                seller_stock=last_entity['seller_stock'],
+                price=last_entity['price']
+            ), chat_id)
 
-                except telegram.error.Forbidden:
-                    change_subscriber_state(subscriber['chat_id'], False)
-
-            mark_entity_as_checked(mongo_id)
-
-        sleep(120)
-
-
-if __name__ == '__main__':
-    asyncio.run(listener())
+        mark_entity_as_checked(mongo_id, chat_id)
