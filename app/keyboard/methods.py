@@ -1,9 +1,15 @@
 from telegram import InlineKeyboardMarkup
 
-from api import send_message_to, db_connector, get_chat_info
-import dialogs
-from helpers import build_menu, make_inline_buttons
-from keyboards import main_menu
+from bot.api import db_connector, get_chat_info, send_message_to
+from constants import dialogs
+from helpers.builders import build_menu, make_inline_buttons
+from keyboard.keyboards import main_menu
+
+
+def get_user_notifications(chat_id):
+    collection = db_connector('cb_collector')
+    subscriber = collection.find_one({"chat_id": chat_id})
+    return subscriber['notifications']
 
 
 def get_user_step(chat_id):

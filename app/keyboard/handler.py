@@ -1,13 +1,13 @@
 from telegram import InlineKeyboardMarkup
 
-import dialogs
-from api import send_message_to, get_available_currency
-from commander import get_notifications, turn_off_notifications
-from helpers import build_menu, make_inline_buttons
-from keyboards import manipulate_buttons
-from user_handlers import get_active_notifications
-from keyboard_methods import get_user_step, change_user_step, show_turn_off_notifications_menu
-import keyboards
+from bot.api import get_available_currency, send_message_to
+from commands.actions import get_active_notifications, get_notifications, turn_off_notifications
+from constants import dialogs
+from helpers.builders import build_menu, make_inline_buttons
+from keyboard import keyboards
+from keyboard.keyboards import manipulate_buttons
+from keyboard.methods import get_user_step, change_user_step, show_turn_off_notifications_menu, \
+    get_user_notifications
 
 
 async def push_button(update, context):
@@ -130,5 +130,17 @@ async def push_button(update, context):
             })
         except AttributeError:
             await send_message_to('Something went wrong...', chat_id)
+
+    elif variant == 'reactivate':
+        notifications = get_user_notifications(chat_id)
+
+        for notification in notifications:
+            await get_notifications(notification, chat_id, context, reactivate=True)
+
+        await query.edit_message_text(
+            text=dialogs.notifications_reactivated
+        )
+
+
     else:
         await query.edit_message_text(text=f"Выбранный вариант: {variant}")

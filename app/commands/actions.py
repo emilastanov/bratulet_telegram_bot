@@ -1,8 +1,6 @@
-
-from api import send_message_to, db_connector, log, get_chat_info
-from keyboard_methods import show_start_menu, show_turn_off_notifications_menu
-from listener import listener
-import dialogs
+from bot.api import send_message_to, db_connector, log
+from commands.listener import listener
+from constants import dialogs
 
 
 async def add_subscriber(chat_id, name):
@@ -32,28 +30,14 @@ async def add_subscriber(chat_id, name):
         await send_message_to(dialogs.again.format(name=name), chat_id)
 
 
-async def start(update, context):
-    await add_subscriber(*get_chat_info(update))
-    await show_start_menu(update, context)
-
-
-async def menu(update, context):
-    await show_start_menu(update, context)
-
-
-async def off_notification(update, _):
-    chat_id, name = get_chat_info(update)
-    await show_turn_off_notifications_menu(chat_id)
-
-
-async def get_notifications(currency_bank, chat_id, context):
+async def get_notifications(currency_bank, chat_id, context, reactivate=False):
 
     subscribers_collection = db_connector('cb_collector')
     notifications = subscribers_collection.find_one({"chat_id": chat_id})['notifications']
 
     is_already_active = currency_bank in notifications
 
-    if is_already_active:
+    if is_already_active and not reactivate:
         await send_message_to(dialogs.already_received_this, chat_id)
     else:
 
@@ -91,7 +75,8 @@ async def turn_off_notifications(chat_id, currency_bank, context):
     await send_message_to(dialogs.notification_terned_off, chat_id)
 
 
-async def help_command(update, context):
-    chat_id, name = get_chat_info(update)
+def get_active_notifications(chat_id):
+    collection = db_connector('cb_collector')
 
-    await send_message_to(dialogs.help_command, chat_id)
+    user = collection.find_one({'chat_id': chat_id})
+    return user['notifications']

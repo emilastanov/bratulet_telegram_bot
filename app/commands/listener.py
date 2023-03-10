@@ -1,9 +1,5 @@
-from time import sleep
-import telegram
-import asyncio
-
-from api import db_connector, send_message_to, log
-import dialogs
+from bot.api import db_connector, log, send_message_to
+from constants import dialogs
 
 
 def get_list_of_subscriber():
@@ -15,10 +11,10 @@ def get_average_of_last_50_entities(currency_bank):
     collection = db_connector(currency_bank, 'currencies')
 
     sum_of_last_10_entities = [
-        float(entity['offers'][0]['price'].replace(' ',''))
+        float(entity['offers'][0]['price'].replace(' ', ''))
         for entity in collection.find(sort=[("timestamp", -1)])[:50]
     ]
-    return sum(sum_of_last_10_entities)/len(sum_of_last_10_entities)
+    return sum(sum_of_last_10_entities) / len(sum_of_last_10_entities)
 
 
 def get_last_currency_entity(chat_id, currency_bank):
@@ -36,7 +32,7 @@ def mark_entity_as_checked(mongo_id, chat_id, currency_bank):
     notifications = user_data['notifications']
     notifications[currency_bank]['last_sent_offer_id'] = mongo_id
     return collection.find_one_and_update({"chat_id": chat_id},
-                                     {"$set": {"notifications": notifications}})
+                                          {"$set": {"notifications": notifications}})
 
 
 def change_subscriber_state(chat_id, state):
@@ -55,11 +51,11 @@ def change_subscriber_state(chat_id, state):
 
 
 async def listener(chat_id, currency_bank, _):
-
     last_entity, mongo_id, last_sent_offer_id = get_last_currency_entity(chat_id, currency_bank)
     average_of_last_50_entities = get_average_of_last_50_entities(currency_bank)
 
-    if (float(last_entity['price'].replace(' ', '')) <= average_of_last_50_entities) and (mongo_id != last_sent_offer_id):
+    if (float(last_entity['price'].replace(' ', '')) <= average_of_last_50_entities) and (
+            mongo_id != last_sent_offer_id):
         await send_message_to(
             dialogs.last_50_hours_average.format(
                 currency=last_entity['currency'],

@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from time import time
-from config import *
+from constants.config import *
 import telegram
 
 
