@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Make config file
-        working-directory: ./app
+        working-directory: app
         run: |
             echo "BOT_TOKEN='$BOT_TOKEN'\nMONGODB_URL='$MONGODB_URL'" >> constants/config.py
       - name: Login to docker.io
