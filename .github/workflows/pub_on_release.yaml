@@ -8,12 +8,16 @@ jobs:
     env:
         LOGIN: ${{ secrets.DOCKER_LOGIN }}
         NAME: ${{ secrets.DOCKER_NAME }}
+        PWD: ${{ secrets.DOCKER_PWD }}
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        MONGODB_URL: ${{ secrets.MONGODB_URL }}
 
     steps:
       - name: Make config file
-        run: echo "BOT_TOKEN='${{ secrets.BOT_TOKEN }}'\nMONGODB_URL='${{ secrets.MONGODB_URL }}'" > .app/constants/config.py
+        run: |
+            echo "BOT_TOKEN='$BOT_TOKEN'\nMONGODB_URL='$MONGODB_URL'" > app/constants/config.py
       - name: Login to docker.io
-        run:  echo ${{ secrets.DOCKER_PWD }} | docker login -u ${{ secrets.DOCKER_LOGIN }} --password-stdin
+        run:  echo $PWD | docker login -u $LOGIN --password-stdin
       - uses: actions/checkout@master
       - name: Build image
         run: docker build -t $LOGIN/$NAME:${GITHUB_REF:11} -f Dockerfile .
