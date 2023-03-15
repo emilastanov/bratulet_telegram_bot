@@ -6,6 +6,7 @@ from keyboard.keyboards import reactivate
 
 
 async def reactive_subscriptions():
+    print('Send messages about notification reactivation.')
     collection = db_connector('cb_collector')
     subscribers = collection.find()
 
