@@ -6,9 +6,6 @@ jobs:
     runs-on: [ubuntu-latest]
 
     env:
-        LOGIN: ${{ secrets.DOCKER_LOGIN }}
-        NAME: ${{ secrets.DOCKER_NAME }}
-        PWD: ${{ secrets.DOCKER_PWD }}
         BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         MONGODB_URL: ${{ secrets.MONGODB_URL }}
 
@@ -18,10 +15,13 @@ jobs:
         working-directory: ${{ github.workspace }}/app
         run: |
             echo "BOT_TOKEN='$BOT_TOKEN'\nMONGODB_URL='$MONGODB_URL'" >> constants/config.py
-      - name: Login to docker.io
-        run:  echo $PWD | docker login -u $LOGIN --password-stdin
-      - uses: actions/checkout@master
-      - name: Build image
-        run: docker build . --tag $NAME
-      - name: Push image to docker.io
-        run: docker push $NAME
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_LOGIN }}
+          password: ${{ secrets.DOCKER_PWD }}
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: ${{ secrets.DOCKER_NAME }}
