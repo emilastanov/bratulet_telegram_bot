@@ -13,7 +13,7 @@ hello = "Hello {name}!\nNice to meet you."
 get_last_50_average = "Done! Now you will receive notification from me about average price" \
         " of last 50 hours.\nNo thanks needed)"
 
-already_received_this = "Bro, you already get this notification.\nUse <b>/turn_off_notifications</b> " \
+already_received_this = "Bro, you already get this notification.\nUse <b>/off_notifications</b> " \
                         "if you want to disable it."
 
 notification_terned_off = "Done! I won't bother you anymore."
