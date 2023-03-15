@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Make config file
-        run: echo "BOT_TOKEN='${{ secrets.BOT_TOKEN }}'\nMONGODB_URL='${{ secrets.MONGODB_URL }}'" > ./app/constants/config.py
+        run: echo "BOT_TOKEN='${{ secrets.BOT_TOKEN }}'\nMONGODB_URL='${{ secrets.MONGODB_URL }}'" > .app/constants/config.py
       - name: Login to docker.io
         run:  echo ${{ secrets.DOCKER_PWD }} | docker login -u ${{ secrets.DOCKER_LOGIN }} --password-stdin
       - uses: actions/checkout@master
