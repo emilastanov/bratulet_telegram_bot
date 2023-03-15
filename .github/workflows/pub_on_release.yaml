@@ -13,8 +13,15 @@ jobs:
         MONGODB_URL: ${{ secrets.MONGODB_URL }}
 
     steps:
+      - uses: actions/checkout@v2
       - name: Make config file
         working-directory: ${{ github.workspace }}/app
         run: |
-            echo "BOT_TOKEN='$BOT_TOKEN'\nMONGODB_URL='$MONGODB_URL'" >> constants/test.py
-      
+            echo "BOT_TOKEN='$BOT_TOKEN'\nMONGODB_URL='$MONGODB_URL'" >> constants/config.py
+      - name: Login to docker.io
+        run:  echo $PWD | docker login -u $LOGIN --password-stdin
+      - uses: actions/checkout@master
+      - name: Build image
+        run: docker build . --tag $NAME
+      - name: Push image to docker.io
+        run: docker push $NAME
